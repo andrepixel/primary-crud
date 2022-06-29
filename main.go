@@ -1,12 +1,9 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
-	"os"
-
 	_ "github.com/mattn/go-sqlite3"
 
+	"github.com/flukebr/primary-crud/database"
 	"github.com/flukebr/primary-crud/entity"
 )
 
@@ -18,9 +15,9 @@ const (
 func main() {
 	game := entity.Game{}
 
-	db := openConnectionWithDatabase(DRIVER_DB, FILE_DB)
+	db := database.OpenConnectionWithDatabase(DRIVER_DB, FILE_DB)
 
-	createTable(db, `
+	database.CreateTable(db, `
 		create table if not exists 'Games'(
 			'id' integer primary key autoincrement,
 			'name' varchar(60) not null,
@@ -30,73 +27,26 @@ func main() {
 		);
 	`)
 
-	insertTable(db, "insert into 'Games' values (1,'Naruto','2000','Bandai','2022');")
+	database.InsertTable(db, "insert into 'Games' values (1,'Naruto','2000','Bandai','2022');")
+	database.InsertTable(db, "insert into 'Games' values (2,'TLOU','2000','Sony','2010');")
+	database.InsertTable(db, "insert into 'Games' values (3,'Halo Infinite','2000','Microsoft','2021');")
 
-	result := getAllTable(db, "select * from Games;")
+	result := database.GetAllDataInTable(db, "select * from Games;")
 
-	printDataInConsole(result, &game)
+	database.PrintRowsInConsole(result, &game)
 
-	closeDB(db)
-	removeDB(FILE_DB)
-}
+	database.UpdateData(db, "update Games set name = 'Halo' where id = 3;")
 
-func openConnectionWithDatabase(driverDB, fileDB string) *sql.DB {
-	if _, err := os.Stat(fileDB); os.IsNotExist(err) {
-		db, err := sql.Open(driverDB, fileDB)
+	result2 := database.GetAllDataInTable(db, "select * from Games;")
 
-		if err != nil {
-			fmt.Println(err)
-		}
+	database.PrintRowsInConsole(result2, &game)
 
-		return db
-	} else {
-		removeDB(fileDB)
-		return nil
-	}
-}
+	database.RemoveData(db, "delete from 'Games' where id = 2;")
 
-func createTable(db *sql.DB, query string) {
-	stmt, err := db.Prepare(query)
+	result3 := database.GetAllDataInTable(db, "select * from Games;")
 
-	if err != nil {
-		fmt.Println(err)
-	}
+	database.PrintRowsInConsole(result3, &game)
 
-	stmt.Exec()
-}
-
-func insertTable(db *sql.DB, query string) {
-	result, err := db.Prepare(query)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	result.Exec()
-}
-
-func getAllTable(db *sql.DB, query string) *sql.Rows {
-	result, err := db.Query(query)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return result
-}
-
-func printDataInConsole(data *sql.Rows, game *entity.Game) {
-	for data.Next() {
-		data.Scan(&game.Id, &game.Name, &game.DateOfExist, &game.Company, &game.ReleaseYear)
-		fmt.Printf("'id': %d\n'name': %s\n'dateofExist': %s\n'company': %s\n'releaseYear': %s\n", game.Id, game.Name, game.DateOfExist, game.Company, game.ReleaseYear)
-	}
-}
-
-func closeDB(db *sql.DB) {
-	db.Close()
-}
-
-func removeDB(pathFile string) {
-	os.Remove(pathFile)
-
+	database.CloseDB(db)
+	database.RemoveDB(FILE_DB)
 }
