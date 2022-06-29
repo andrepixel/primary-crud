@@ -41,14 +41,15 @@ func CreateTable(db *sql.DB, query string) {
 	stmt.Exec()
 }
 
-func InsertTable(db *sql.DB, query string) {
+func InsertTable(db *sql.DB, query string, args ...interface{}) {
 	result, err := db.Prepare(query)
 
 	if err != nil {
 		fmt.Println(err)
+		recover()
 	}
 
-	result.Exec()
+	result.Exec(args...)
 }
 
 func GetAllDataInTable(db *sql.DB, query string) *sql.Rows {
@@ -61,43 +62,35 @@ func GetAllDataInTable(db *sql.DB, query string) *sql.Rows {
 	return result
 }
 
-func UpdateData(db *sql.DB, query string) {
+func UpdateData(db *sql.DB, query string, args ...interface{}) {
 	result, err := db.Prepare(query)
 
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	result.Exec()
+	result.Exec(args...)
 }
 
-func RemoveData(db *sql.DB, query string) *sql.Stmt {
+func RemoveData(db *sql.DB, query string, args ...interface{}) {
 	result, err := db.Prepare(query)
 
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	result.Exec()
-
-	return result
+	result.Exec(args...)
 }
 
 func PrintRowsInConsole(data *sql.Rows, game *entity.Game) {
 	fmt.Println("---------------------------")
 
 	for data.Next() {
-		data.Scan(&game.Id, &game.Name, &game.DateOfExist, &game.Company, &game.ReleaseYear)
-		
-		fmt.Printf("'id': %d\n'name': %s\n'dateofExist': %s\n'company': %s\n'releaseYear': %s\n\n", game.Id, game.Name, game.DateOfExist, game.Company, game.ReleaseYear)
+		data.Scan(&game.Id, &game.Name, &game.Company, &game.ReleaseYear, &game.DateOfExist)
+
+		fmt.Printf("'id': %s\n'name': %s\n'dateofExist': %d years\n'company': %s\n'releaseYear': %d\n\n", game.GetIdString(), game.GetName(), game.GetDateOfExist(), game.GetCompany(), game.GetReleaseYear())
 	}
-}
 
-func PrintDataInConsole(data *sql.Stmt, game *entity.Game) {
-	fmt.Println("---------------------------")
-
-	// data.Scan(&game.Id, &game.Name, &game.DateOfExist, &game.Company, &game.ReleaseYear)
-	fmt.Printf("'id': %d\n'name': %s\n'dateofExist': %s\n'company': %s\n'releaseYear': %s\n\n", game.Id, game.Name, game.DateOfExist, game.Company, game.ReleaseYear)
 }
 
 func CloseDB(db *sql.DB) {
