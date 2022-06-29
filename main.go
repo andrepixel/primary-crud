@@ -13,39 +13,45 @@ const (
 )
 
 func main() {
+	defer func() {
+        if r := recover(); r != nil {
+            println("Recovered. Error:\n", r)
+        }
+    }()
+
 	game := entity.Game{}
 
 	db := database.OpenConnectionWithDatabase(DRIVER_DB, FILE_DB)
 
 	database.CreateTable(db, `
 		create table if not exists 'Games'(
-			'id' integer primary key autoincrement,
+			'id' varchar(16) primary key,
 			'name' varchar(60) not null,
-			'dateOfExist' varchar(60) not null,
+			'dateOfExist' integer not null,
 			'company' varchar(60) not null,
-			'releaseYear' varchar(60) not null
+			'releaseYear' integer not null
 		);
 	`)
 
-	database.InsertTable(db, "insert into 'Games' values (1,'Naruto','2000','Bandai','2022');")
-	database.InsertTable(db, "insert into 'Games' values (2,'TLOU','2000','Sony','2010');")
-	database.InsertTable(db, "insert into 'Games' values (3,'Halo Infinite','2000','Microsoft','2021');")
+	newGame := game.InsertGame("Naruto", "Bandai", 2000)
 
-	result := database.GetAllDataInTable(db, "select * from Games;")
+	database.InsertTable(db, "insert into 'Games' values (?,?,?,?,?)", newGame.GetIdString(), newGame.GetName(), newGame.GetCompany(), newGame.GetReleaseYear(), game.GetDateOfExist())
+	
+	newGame2 := game.InsertGame("TLOU", "Sony", 2010)
 
-	database.PrintRowsInConsole(result, &game)
+	database.InsertTable(db, "insert into 'Games' values (?,?,?,?,?)", newGame2.GetIdString(), newGame2.GetName(), newGame2.GetCompany(), newGame2.GetReleaseYear(), game.GetDateOfExist())
 
-	database.UpdateData(db, "update Games set name = 'Halo' where id = 3;")
+	newGame3 := game.InsertGame("Halo", "Microsoft", 2021)
+	
+	database.InsertTable(db, "insert into 'Games' values (?,?,?,?,?)", newGame3.GetIdString(), newGame3.GetName(), newGame3.GetCompany(), newGame3.GetReleaseYear(), game.GetDateOfExist())
 
-	result2 := database.GetAllDataInTable(db, "select * from Games;")
+	database.UpdateData(db, "update 'Games' set name = ? where name = ?;", "Halo Infinite", "Halo")
 
-	database.PrintRowsInConsole(result2, &game)
+	database.RemoveData(db, "delete from 'Games' where name = ?;", "aa")
 
-	database.RemoveData(db, "delete from 'Games' where id = 2;")
+	result := database.GetAllDataInTable(db, "select * from 'Games';")
 
-	result3 := database.GetAllDataInTable(db, "select * from Games;")
-
-	database.PrintRowsInConsole(result3, &game)
+	database.PrintRowsInConsole(result, newGame)
 
 	database.CloseDB(db)
 	database.RemoveDB(FILE_DB)
